@@ -117,9 +117,10 @@ typealias LazyListScopeContent = androidx.compose.foundation.lazy.LazyListScope.
 @Composable fun ContactsScreen() {
     val ctx = LocalContext.current
     var adding by remember { mutableStateOf(false) }
+    val sortedContacts = remember(sampleContacts) { sampleContacts.sortedByDescending { it.emergency } }
     Box(Modifier.fillMaxSize()) {
     Page("Contacts") {
-        itemsIndexed(remember { sampleContacts.sortedByDescending { it.emergency } }, key = { _, c -> c.name + c.phone }) { i, c ->
+        itemsIndexed(sortedContacts, key = { _, c -> c.name + c.phone }) { i, c ->
             PressCard(Modifier.fillMaxWidth(), {}, index = i) {
                 Row(Modifier.heightIn(min = Tokens.rowMin).padding(horizontal = Tokens.s16, vertical = Tokens.s12), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(Tokens.icon).background(if (c.emergency) vc.accent.copy(alpha = 0.16f) else vc.surface2, CircleShape), Alignment.Center) {
