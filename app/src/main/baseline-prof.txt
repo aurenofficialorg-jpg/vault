@@ -1,0 +1,12 @@
+HSPLandroidx/compose/**;->**(**)**
+HSPLandroidx/compose/animation/**;->**(**)**
+HSPLandroidx/compose/foundation/**;->**(**)**
+HSPLandroidx/compose/foundation/lazy/**;->**(**)**
+HSPLandroidx/compose/material3/**;->**(**)**
+HSPLandroidx/compose/runtime/**;->**(**)**
+HSPLandroidx/compose/ui/**;->**(**)**
+HSPLandroidx/activity/compose/**;->**(**)**
+HSPLandroidx/lifecycle/**;->**(**)**
+HSPLcom/vault/app/**;->**(**)**
+Landroidx/compose/**;
+Lcom/vault/app/**;

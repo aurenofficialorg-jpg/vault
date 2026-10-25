@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.ui.graphics.Color
@@ -44,9 +45,9 @@ fun catIcon(c: Category) = when (c) {
     val t by remember { derivedStateOf { if (st.firstVisibleItemIndex > 0) 1f else (st.firstVisibleItemScrollOffset / 90f).coerceIn(0f, 1f) } }
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Box(Modifier.fillMaxSize()) {
-        LazyColumn(Modifier.fillMaxSize(), st, contentPadding = PaddingValues(Tokens.s24, top + 48.dp, Tokens.s24, Tokens.s32),
+        LazyColumn(Modifier.fillMaxSize(), st, contentPadding = PaddingValues(Tokens.screenH, top + Tokens.s16, Tokens.screenH, 104.dp),
             verticalArrangement = Arrangement.spacedBy(Tokens.s8)) {
-            item { Text(title, style = Type.headline, color = vc.text, modifier = Modifier.padding(bottom = Tokens.s8).graphicsLayer { alpha = 1f - t; translationY = -t * 8f }) }
+            item { Text(title, style = Type.headline, color = vc.text, modifier = Modifier.padding(bottom = Tokens.s16).graphicsLayer { alpha = 1f - t; translationY = -t * 8f }) }
             content()
         }
         Box(Modifier.fillMaxWidth().height(top + 48.dp).graphicsLayer { alpha = t }.background(vc.bg.copy(alpha = 0.94f)).padding(top = top), Alignment.Center) {
@@ -60,22 +61,22 @@ typealias LazyListScopeContent = androidx.compose.foundation.lazy.LazyListScope.
 @Composable fun HomeScreen(goVault: () -> Unit, goContacts: () -> Unit) {
     val hr = java.time.LocalTime.now().hour
     val greeting = when { hr < 12 -> "Good morning."; hr < 17 -> "Good afternoon."; else -> "Good evening." }
-    val expiring = sampleDocs.filter { (it.daysLeft ?: 999) <= 120 }.sortedBy { it.daysLeft }
-    LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(Tokens.s24, Tokens.s16, Tokens.s24, Tokens.s32),
+    val expiring = remember { sampleDocs.filter { (it.daysLeft ?: 999) <= 120 }.sortedBy { it.daysLeft } }
+    LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(Tokens.screenH, Tokens.s16, Tokens.screenH, 104.dp),
         verticalArrangement = Arrangement.spacedBy(Tokens.s8)) {
         item {
             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                Row(verticalAlignment = Alignment.CenterVertically) { VaultMark(28.dp); Spacer(Modifier.width(10.dp)); Text("VAULT", style = Type.label.copy(letterSpacing = androidx.compose.ui.unit.TextUnit(3f, androidx.compose.ui.unit.TextUnitType.Sp)), color = vc.text) }
+                Row(verticalAlignment = Alignment.CenterVertically) { VaultMark(28.dp); Spacer(Modifier.width(Tokens.s12)); Text("VAULT", style = Type.wordmark, color = vc.text) }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Lock, "Vault is locked on exit", tint = vc.accent, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp)); Text("Protected", style = Type.label, color = vc.text2)
+                    Spacer(Modifier.width(Tokens.s4)); Text("Protected", style = Type.label, color = vc.text2)
                 }
             }
-            Spacer(Modifier.height(Tokens.s24))
+            Spacer(Modifier.height(Tokens.s32))
             Text(greeting, style = Type.body, color = vc.text2)
             Text("Everything in its place.", style = Type.headline, color = vc.text)
-            Text("Your important information, organized and ready.", style = Type.body, color = vc.text2, modifier = Modifier.padding(top = 4.dp))
-            Text("Sample data shown for this prototype.", style = Type.meta, color = vc.text3, modifier = Modifier.padding(top = 4.dp))
+            Text("Your important information, organized and ready.", style = Type.body, color = vc.text2, modifier = Modifier.padding(top = Tokens.s8))
+            Text("Sample data shown for this prototype.", style = Type.meta, color = vc.text3, modifier = Modifier.padding(top = Tokens.s4))
         }
         item {
             SectionTitle("Quick access")
@@ -83,10 +84,10 @@ typealias LazyListScopeContent = androidx.compose.foundation.lazy.LazyListScope.
                 Triple("Documents", Icons.Outlined.Description, goVault), Triple("Contacts", Icons.Outlined.Contacts, goContacts))
             Column(verticalArrangement = Arrangement.spacedBy(Tokens.s12)) {
                 tiles.chunked(2).forEach { r ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(Tokens.s12)) {
+                    Row(Modifier.height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(Tokens.s12)) {
                         r.forEach { (n, ic, go) ->
-                            PressCard(Modifier.weight(1f), go) {
-                                Column(Modifier.padding(Tokens.s16)) { IconBadge(ic); Spacer(Modifier.height(Tokens.s16)); Text(n, style = Type.title, color = vc.text)
+                            PressCard(Modifier.weight(1f).fillMaxHeight(), go) {
+                                Column(Modifier.fillMaxWidth().padding(Tokens.s16)) { IconBadge(ic, size = Tokens.icon); Spacer(Modifier.height(Tokens.s16)); Text(n, style = Type.title, color = vc.text, maxLines = 1)
                                     val k = when (n) { "Identity" -> sampleDocs.count { it.category == Category.Identity }; "Bank & Cards" -> sampleDocs.count { it.category == Category.Financial }; "Documents" -> sampleDocs.size; else -> sampleContacts.size }
                                     Text("$k items", style = Type.meta, color = vc.text2) }
                             }
@@ -96,17 +97,17 @@ typealias LazyListScopeContent = androidx.compose.foundation.lazy.LazyListScope.
             }
         }
         item { SectionTitle("Recently accessed") }
-        itemsIndexed(sampleDocs.take(4)) { i, d -> Row2(catIcon(d.category), d.title, d.category.label, d.accessed, index = i, onClick = goVault) }
+        itemsIndexed(sampleDocs.take(4), key = { _, d -> "r-" + d.title }) { i, d -> Row2(catIcon(d.category), d.title, d.category.label, d.accessed, index = i, onClick = goVault) }
         if (expiring.isNotEmpty()) {
             item { SectionTitle("Upcoming reminders") }
-            itemsIndexed(expiring.take(2)) { i, d -> Row2(Icons.Outlined.EventNote, "${d.title} renewal", "Expires in ${d.daysLeft} days", null, index = i, onClick = goVault) }
+            itemsIndexed(expiring.take(2), key = { _, d -> "e-" + d.title }) { i, d -> Row2(Icons.Outlined.EventNote, "${d.title} renewal", "Expires in ${d.daysLeft} days", null, index = i, onClick = goVault) }
         }
         item {
             SectionTitle("Security")
             PressCard(Modifier.fillMaxWidth(), {}) {
-                Column(Modifier.padding(Tokens.s16)) {
+                Column(Modifier.fillMaxWidth().padding(Tokens.s16)) {
                     Text("Biometric or device-credential unlock is required to open VAULT.", style = Type.body, color = vc.text)
-                    Text("Recovery method: not set up yet", style = Type.meta, color = vc.warning, modifier = Modifier.padding(top = 4.dp))
+                    Text("Recovery method: not set up yet", style = Type.meta, color = vc.warning, modifier = Modifier.padding(top = Tokens.s4))
                 }
             }
         }
@@ -118,15 +119,15 @@ typealias LazyListScopeContent = androidx.compose.foundation.lazy.LazyListScope.
     var adding by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxSize()) {
     Page("Contacts") {
-        itemsIndexed(sampleContacts.sortedByDescending { it.emergency }) { i, c ->
+        itemsIndexed(remember { sampleContacts.sortedByDescending { it.emergency } }, key = { _, c -> c.name + c.phone }) { i, c ->
             PressCard(Modifier.fillMaxWidth(), {}, index = i) {
-                Row(Modifier.padding(Tokens.s16), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(44.dp).background(if (c.emergency) vc.accent.copy(alpha = 0.16f) else vc.surface2, CircleShape), Alignment.Center) {
+                Row(Modifier.heightIn(min = Tokens.rowMin).padding(horizontal = Tokens.s16, vertical = Tokens.s12), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(Tokens.icon).background(if (c.emergency) vc.accent.copy(alpha = 0.16f) else vc.surface2, CircleShape), Alignment.Center) {
                         Text(c.name.split(" ").mapNotNull { it.firstOrNull() }.take(2).joinToString(""), style = Type.title, color = if (c.emergency) vc.accent else vc.text2)
                     }
                     Spacer(Modifier.width(Tokens.s12))
-                    Column(Modifier.weight(1f)) {
-                        Text(c.name, style = Type.title, color = vc.text)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                        Text(c.name, style = Type.title, color = vc.text, maxLines = 1)
                         Text(if (c.emergency) "${c.group} · Emergency" else c.group, style = Type.meta, color = vc.text2)
                     }
                     RoundAction(Icons.Outlined.Call, "Call ${c.name}") { ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${c.phone}"))) }
@@ -144,14 +145,15 @@ typealias LazyListScopeContent = androidx.compose.foundation.lazy.LazyListScope.
 @Composable private fun RoundAction(icon: ImageVector, desc: String, onClick: () -> Unit) {
     val src = remember { MutableInteractionSource() }
     val pr by src.collectIsPressedAsState()
-    val bg by animateColorAsState(if (pr) vc.accent.copy(alpha = 0.22f) else vc.surface2, tween(120), label = "ra")
-    Box(Modifier.size(Tokens.touch).background(bg, CircleShape).clip(CircleShape).clickable(src, null, role = androidx.compose.ui.semantics.Role.Button, onClick = onClick), Alignment.Center) {
+    val bg by animateColorAsState(if (pr) vc.accent.copy(alpha = 0.22f) else vc.surface2, tween(100), label = "ra")
+    Box(Modifier.size(Tokens.touch).clip(CircleShape).clickable(src, null, role = androidx.compose.ui.semantics.Role.Button, onClick = onClick), Alignment.Center) {
+        Box(Modifier.size(Tokens.icon).drawBehind { drawCircle(bg) })
         Icon(icon, desc, tint = vc.accent, modifier = Modifier.size(20.dp))
     }
 }
 
 @Composable private fun Group(label: String, content: @Composable ColumnScope.() -> Unit) {
-    Text(label, style = Type.label, color = vc.text2, modifier = Modifier.padding(start = 4.dp, top = Tokens.s24, bottom = Tokens.s8))
+    Text(label, style = Type.label, color = vc.text2, modifier = Modifier.padding(start = Tokens.s16, top = Tokens.s24, bottom = Tokens.s8))
     val shape = RoundedCornerShape(Tokens.rCard)
     Column(Modifier.fillMaxWidth().staggerIn(0).clip(shape).background(vc.surface).border(0.5.dp, vc.divider, shape), content = content)
 }
@@ -159,16 +161,16 @@ typealias LazyListScopeContent = androidx.compose.foundation.lazy.LazyListScope.
 @Composable private fun SRow(icon: ImageVector, title: String, sub: String, last: Boolean = false, onClick: () -> Unit, trailing: @Composable () -> Unit) {
     val src = remember { MutableInteractionSource() }
     val pr by src.collectIsPressedAsState()
-    val bg by animateColorAsState(if (pr) vc.surface2 else vc.surface, tween(120), label = "sr")
+    val bg by animateColorAsState(if (pr) vc.surface2 else vc.surface, tween(100), label = "sr")
     val h = LocalHapticFeedback.current
     Column {
         Row(Modifier.fillMaxWidth().background(bg).clickable(src, null) { h.performHapticFeedback(HapticFeedbackType.TextHandleMove); onClick() }
-            .heightIn(min = 64.dp).padding(horizontal = Tokens.s16, vertical = Tokens.s12), verticalAlignment = Alignment.CenterVertically) {
-            IconBadge(icon); Spacer(Modifier.width(Tokens.s12))
-            Column(Modifier.weight(1f)) { Text(title, style = Type.title, color = vc.text); Text(sub, style = Type.meta, color = vc.text2) }
-            Spacer(Modifier.width(Tokens.s8)); trailing()
+            .heightIn(min = Tokens.rowMin).padding(horizontal = Tokens.s16, vertical = Tokens.s12), verticalAlignment = Alignment.CenterVertically) {
+            IconBadge(icon, size = Tokens.icon); Spacer(Modifier.width(Tokens.s12))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) { Text(title, style = Type.title, color = vc.text); Text(sub, style = Type.meta, color = vc.text2) }
+            Spacer(Modifier.width(Tokens.s12)); Box(Modifier.widthIn(min = 24.dp), Alignment.CenterEnd) { trailing() }
         }
-        if (!last) HorizontalDivider(Modifier.padding(start = 68.dp), color = vc.divider, thickness = 0.5.dp)
+        if (!last) HorizontalDivider(Modifier.padding(start = Tokens.dividerInset), color = vc.divider, thickness = 0.5.dp)
     }
 }
 
@@ -188,7 +190,7 @@ typealias LazyListScopeContent = androidx.compose.foundation.lazy.LazyListScope.
                 SRow(Icons.Outlined.Fingerprint, "Unlock method", "Biometric or device PIN is required every time.", onClick = {}) { Icon(Icons.Outlined.Lock, null, tint = vc.accent) }
                 SRow(Icons.Outlined.NotificationsOff, "Private notifications", "Reminders never show document details.", onClick = { hide = !hide }) { Switch(hide, { hide = it }, colors = sw) }
                 SRow(Icons.Outlined.Timer, "Automatic lock", "Also locks whenever you leave the app.", onClick = { lockIdx = (lockIdx + 1) % opts.size; Prefs.idleSec = listOf(30, 60, 120, 300)[lockIdx] }) {
-                    AnimatedContent(lockIdx, transitionSpec = { (slideInVertically(tween(240, easing = Smooth)) { it / 2 } + fadeIn(tween(240))) togetherWith (slideOutVertically(tween(160)) { -it / 2 } + fadeOut(tween(120))) }, label = "lock") {
+                    AnimatedContent(lockIdx, transitionSpec = { (slideInVertically(tween(260, easing = Smooth)) { it / 3 } + fadeIn(tween(200))) togetherWith (slideOutVertically(tween(160, easing = Smooth)) { -it / 3 } + fadeOut(tween(100))) }, label = "lock") {
                         Text(opts[it], style = Type.meta, color = vc.accent)
                     }
                 }

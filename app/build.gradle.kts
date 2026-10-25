@@ -7,7 +7,7 @@ android {
     namespace = "com.vault.app"
     compileSdk = 34
     defaultConfig { applicationId = "com.vault.app"; minSdk = 30; targetSdk = 34; versionCode = 1; versionName = "0.1" }
-    buildTypes { release { isMinifyEnabled = true; isShrinkResources = false; isDebuggable = false; proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro") } }
+    buildTypes { release { isMinifyEnabled = true; isShrinkResources = true; isDebuggable = false; proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro") } }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
@@ -22,4 +22,5 @@ dependencies {
     implementation("androidx.fragment:fragment-ktx:1.8.3")
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
+    implementation("androidx.profileinstaller:profileinstaller:1.3.1")
 }

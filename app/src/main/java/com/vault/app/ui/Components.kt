@@ -1,5 +1,5 @@
 package com.vault.app.ui
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 
@@ -29,10 +29,11 @@ import androidx.compose.ui.unit.dp
 @Composable fun PressCard(modifier: Modifier = Modifier, onClick: () -> Unit, index: Int = 0, content: @Composable () -> Unit) {
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
-    val s by animateFloatAsState(if (pressed) 0.98f else 1f, spring(1f, Spring.StiffnessMediumLow), label = "press")
+    val s by animateFloatAsState(if (pressed) 0.97f else 1f, snap(), label = "press")
     val h = LocalHapticFeedback.current
-    Box(modifier.staggerIn(index).scale(s).shadow(if (vc.dark) 0.dp else 8.dp, RoundedCornerShape(Tokens.rCard), clip = false, ambientColor = Color.Black.copy(0.05f), spotColor = Color.Black.copy(0.07f)).clip(RoundedCornerShape(Tokens.rCard)).background(vc.surface)
-        .border(0.5.dp, vc.divider, RoundedCornerShape(Tokens.rCard))
+    val shape = RoundedCornerShape(Tokens.rCard)
+    Box(modifier.staggerIn(index).graphicsLayer { scaleX = s; scaleY = s }.clip(shape).background(vc.surface)
+        .border(0.5.dp, vc.divider, shape)
         .clickable(src, null, role = Role.Button, onClick = { h.performHapticFeedback(HapticFeedbackType.TextHandleMove); onClick() })) { content() }
 }
 
@@ -45,26 +46,27 @@ import androidx.compose.ui.unit.dp
 @Composable fun Row2(icon: ImageVector, title: String, sub: String?, trailing: String? = null, index: Int = 0,
                      modifier: Modifier = Modifier, iconMod: Modifier = Modifier, titleMod: Modifier = Modifier, onClick: () -> Unit = {}) {
     PressCard(modifier.fillMaxWidth(), onClick, index) {
-        Row(Modifier.heightIn(min = 64.dp).padding(horizontal = Tokens.s16, vertical = Tokens.s12), verticalAlignment = Alignment.CenterVertically) {
-            IconBadge(icon, modifier = iconMod)
+        Row(Modifier.heightIn(min = Tokens.rowMin).padding(horizontal = Tokens.s16, vertical = Tokens.s12), verticalAlignment = Alignment.CenterVertically) {
+            IconBadge(icon, modifier = iconMod, size = Tokens.icon)
             Spacer(Modifier.width(Tokens.s12))
-            Column(Modifier.weight(1f)) {
-                Text(title, style = Type.title, color = vc.text, modifier = titleMod)
-                if (sub != null) Text(sub, style = Type.meta, color = vc.text2)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                Text(title, style = Type.title, color = vc.text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = titleMod)
+                if (sub != null) Text(sub, style = Type.meta, color = vc.text2, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             }
-            if (trailing != null) Text(trailing, style = Type.meta, color = vc.text3)
-            Icon(Icons.Outlined.ChevronRight, null, tint = vc.text3)
+            if (trailing != null) { Spacer(Modifier.width(Tokens.s8)); Text(trailing, style = Type.meta, color = vc.text3, maxLines = 1) }
+            Spacer(Modifier.width(Tokens.s4))
+            Icon(Icons.Outlined.ChevronRight, null, tint = vc.text3, modifier = Modifier.size(20.dp))
         }
     }
 }
 
-@Composable fun SectionTitle(t: String) = Text(t, style = Type.section, color = vc.text, modifier = Modifier.padding(top = Tokens.s24, bottom = Tokens.s12))
+@Composable fun SectionTitle(t: String) = Text(t, style = Type.section, color = vc.text, modifier = Modifier.padding(top = Tokens.s32, bottom = Tokens.s12))
 
 @Composable fun PrimaryButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
-    val s by animateFloatAsState(if (pressed) 0.98f else 1f, spring(1f, Spring.StiffnessMediumLow), label = "btn")
-    Button(onClick, modifier.fillMaxWidth().heightIn(min = 52.dp).scale(s), interactionSource = src, shape = RoundedCornerShape(14.dp),
+    val s by animateFloatAsState(if (pressed) 0.97f else 1f, snap(), label = "btn")
+    Button(onClick, modifier.fillMaxWidth().heightIn(min = 56.dp).graphicsLayer { scaleX = s; scaleY = s }, interactionSource = src, shape = RoundedCornerShape(Tokens.rSmall + 2.dp),
         colors = ButtonDefaults.buttonColors(containerColor = if (vc.dark) vc.accent else Color(0xFF292929), contentColor = if (vc.dark) vc.bg else vc.surface)) {
         Text(text, style = Type.title)
     }

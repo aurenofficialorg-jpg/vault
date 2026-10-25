@@ -17,7 +17,8 @@ import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -54,7 +55,7 @@ private enum class Tab(val label: String) { Home("Home"), Vault("Vault"), Contac
     val ms = motionMs()
     Box(Modifier.fillMaxSize().background(vc.bg).pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent(PointerEventPass.Initial); Prefs.touch() } } }) {
         AnimatedContent(stage, transitionSpec = {
-            (fadeIn(tween(ms, ms / 3, Smooth)) + scaleIn(tween(ms, ms / 3, Smooth), 0.96f)) togetherWith fadeOut(tween(ms / 2))
+            fadeIn(tween(ms, ms / 4, Smooth)) togetherWith fadeOut(tween(ms / 2, easing = Smooth))
         }, label = "stage") { s ->
             when (s) { 0 -> Onboarding { onboarded = true }; 1 -> if (recovering) RecoveryEntry(activity, { recovering = false }) { recovering = false; locked = false } else LockScreen(activity, { recovering = true }) { locked = false }; else -> Shell() }
         }
@@ -68,9 +69,9 @@ private enum class Tab(val label: String) { Home("Home"), Vault("Vault"), Contac
         Triple("Private means private.", "Your personal information deserves serious protection. VAULT keeps your data on this device and locks when you leave.", Icons.Outlined.Lock),
         Triple("Everything important, within reach.", "Find a document, call an important contact, or check an upcoming expiry in just a few moments.", Icons.Outlined.Search))
     val st = rememberPagerState { 3 }; val scope = rememberCoroutineScope()
-    Column(Modifier.fillMaxSize().systemBarsPadding().padding(Tokens.s24)) {
+    Column(Modifier.fillMaxSize().systemBarsPadding().padding(Tokens.screenH)) {
         HorizontalPager(st, Modifier.weight(1f)) { i ->
-            Column(Modifier.fillMaxSize().graphicsLayer { val pos = i - (st.currentPage + st.currentPageOffsetFraction); alpha = 1f - kotlin.math.abs(pos).coerceIn(0f, 1f); translationX = -pos * size.width * 0.35f }, Arrangement.Center) {
+            Column(Modifier.fillMaxSize().graphicsLayer { val pos = i - (st.currentPage + st.currentPageOffsetFraction); alpha = 1f - kotlin.math.abs(pos).coerceIn(0f, 1f); translationX = -pos * size.width * 0.3f }, Arrangement.Center) {
                 Icon(pages[i].third, null, tint = vc.accent, modifier = Modifier.size(56.dp))
                 Spacer(Modifier.height(Tokens.s24))
                 Text(pages[i].first, style = Type.headline, color = vc.text)
@@ -78,16 +79,16 @@ private enum class Tab(val label: String) { Home("Home"), Vault("Vault"), Contac
                 Text(pages[i].second, style = Type.body, color = vc.text2)
             }
         }
-        Row(Modifier.fillMaxWidth().padding(vertical = Tokens.s16), Arrangement.Center) {
+        Row(Modifier.fillMaxWidth().padding(vertical = Tokens.s16), Arrangement.Center, Alignment.CenterVertically) {
             repeat(3) {
                 val sel = st.currentPage == it
-                val w by animateDpAsState(if (sel) 22.dp else 7.dp, tween(280, easing = Smooth), label = "w")
-                val c by animateColorAsState(if (sel) vc.accent else vc.divider, tween(280), label = "c")
-                Box(Modifier.padding(4.dp).height(7.dp).width(w).background(c, CircleShape))
+                val w by animateDpAsState(if (sel) 24.dp else 8.dp, glide(), label = "w")
+                val c by animateColorAsState(if (sel) vc.accent else vc.divider, tween(240), label = "c")
+                Box(Modifier.padding(horizontal = Tokens.s4).height(8.dp).width(w).clip(CircleShape).drawBehind { drawRect(c) })
             }
         }
-        AnimatedContent(st.currentPage < 2, transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(120)) }, label = "cta") { more ->
-            if (more) PrimaryButton("Continue") { scope.launch { st.animateScrollToPage(st.currentPage + 1, animationSpec = tween(420, easing = Smooth)) } }
+        AnimatedContent(st.currentPage < 2, transitionSpec = { fadeIn(tween(220, easing = Smooth)) togetherWith fadeOut(tween(100)) }, label = "cta") { more ->
+            if (more) PrimaryButton("Continue") { scope.launch { st.animateScrollToPage(st.currentPage + 1, animationSpec = spring(1f, 260f)) } }
             else Column { PrimaryButton("Create my VAULT", onClick = done); TextAction("I already have an account", done) }
         }
     }
@@ -117,11 +118,11 @@ private enum class Tab(val label: String) { Home("Home"), Vault("Vault"), Contac
             .setAllowedAuthenticators(BIOMETRIC_STRONG or DEVICE_CREDENTIAL).build(), BiometricPrompt.CryptoObject(cipher))
     }
     var shown by remember { mutableStateOf(false) }
-    val sc by animateFloatAsState(if (shown) 1f else 0.8f, tween(500, easing = Smooth), label = "lock")
+    val sc by animateFloatAsState(if (shown) 1f else 0.8f, glide(), label = "lock")
     LaunchedEffect(Unit) { shown = true; prompt() }
-    Column(Modifier.fillMaxSize().systemBarsPadding().padding(Tokens.s24), Arrangement.Center, Alignment.CenterHorizontally) {
-        VaultMark(76.dp, Modifier.scale(sc))
-        Spacer(Modifier.height(Tokens.s16))
+    Column(Modifier.fillMaxSize().systemBarsPadding().padding(Tokens.screenH), Arrangement.Center, Alignment.CenterHorizontally) {
+        VaultMark(80.dp, Modifier.graphicsLayer { scaleX = sc; scaleY = sc; alpha = (sc - 0.8f) * 5f })
+        Spacer(Modifier.height(Tokens.s24))
         Text("VAULT is locked", style = Type.section, color = vc.text)
         error?.let { Text(it, style = Type.meta, color = vc.warning, textAlign = TextAlign.Center, modifier = Modifier.padding(top = Tokens.s8)) }
         Spacer(Modifier.height(Tokens.s24))
@@ -138,8 +139,7 @@ private enum class Tab(val label: String) { Home("Home"), Vault("Vault"), Contac
         Box(Modifier.padding(bottom = pad.calculateBottomPadding())) {
             AnimatedContent(tab, transitionSpec = {
                 val dir = if (targetState.ordinal > initialState.ordinal) 1 else -1
-                (slideInHorizontally(tween(ms, easing = Smooth)) { it / 8 * dir } + fadeIn(tween(ms, easing = Smooth))) togetherWith
-                    (slideOutHorizontally(tween(ms, easing = Smooth)) { -it / 8 * dir } + fadeOut(tween(ms / 2)))
+                fadeIn(tween(ms * 2 / 3, ms / 6, Smooth)) togetherWith fadeOut(tween(ms / 4, easing = LinearEasing))
             }, label = "tab") { t ->
                 when (t) {
                     Tab.Home -> HomeScreen({ tab = Tab.Vault }, { tab = Tab.Contacts })
@@ -158,20 +158,22 @@ private enum class Tab(val label: String) { Home("Home"), Vault("Vault"), Contac
         HorizontalDivider(color = vc.divider, thickness = 0.5.dp)
         BoxWithConstraints(Modifier.fillMaxWidth().navigationBarsPadding().height(64.dp)) {
             val w = maxWidth / 4
-            val x by animateDpAsState(w * tab.ordinal, spring(0.9f, Spring.StiffnessMediumLow), label = "pill")
-            Box(Modifier.offset(x).width(w).fillMaxHeight().padding(horizontal = 14.dp, vertical = 8.dp).background(vc.surface2, RoundedCornerShape(16.dp)))
+            val c2 = vc.surface2
+            val x by animateFloatAsState(tab.ordinal.toFloat(), glide(), label = "pill")
+            Box(Modifier.offset { androidx.compose.ui.unit.IntOffset((w.toPx() * x).toInt(), 0) }.width(w).fillMaxHeight().padding(horizontal = Tokens.s12, vertical = Tokens.s8).clip(RoundedCornerShape(16.dp)).drawBehind { drawRect(c2) })
             Row(Modifier.fillMaxSize()) {
                 Tab.values().forEach { t ->
                     val sel = tab == t
                     val ic: ImageVector = when (t) { Tab.Home -> Icons.Outlined.Home; Tab.Vault -> Icons.Outlined.Folder; Tab.Contacts -> Icons.Outlined.People; Tab.Settings -> Icons.Outlined.Settings }
-                    val tint by animateColorAsState(if (sel) vc.accent else vc.text3, tween(220), label = "tint")
-                    val label by animateColorAsState(if (sel) vc.text else vc.text3, tween(220), label = "label")
-                    val sc by animateFloatAsState(if (sel) 1.08f else 1f, spring(1f, Spring.StiffnessMediumLow), label = "ic")
+                    val tint by animateColorAsState(if (sel) vc.accent else vc.text3, tween(200), label = "tint")
+                    val label by animateColorAsState(if (sel) vc.text else vc.text3, tween(200), label = "label")
+                    val sc by animateFloatAsState(if (sel) 1.06f else 1f, snap(), label = "ic")
                     Column(Modifier.weight(1f).fillMaxHeight().selectable(sel, remember { MutableInteractionSource() }, null, role = Role.Tab) {
                         if (!sel) h.performHapticFeedback(HapticFeedbackType.TextHandleMove); onSelect(t)
                     }, Arrangement.Center, Alignment.CenterHorizontally) {
-                        Icon(ic, null, tint = tint, modifier = Modifier.size(24.dp).scale(sc))
-                        Text(t.label, style = Type.label, color = label)
+                        Icon(ic, null, tint = tint, modifier = Modifier.size(24.dp).graphicsLayer { scaleX = sc; scaleY = sc })
+                        Spacer(Modifier.height(Tokens.s4))
+                        Text(t.label, style = Type.label, color = label, maxLines = 1)
                     }
                 }
             }

@@ -26,7 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -43,19 +43,19 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable fun VField(label: String, v: String, on: (String) -> Unit, kb: KeyboardType = KeyboardType.Text) {
-    Column(Modifier.fillMaxWidth().padding(bottom = Tokens.s12)) {
-        Text(label, style = Type.label, color = vc.text2, modifier = Modifier.padding(bottom = 6.dp))
+    Column(Modifier.fillMaxWidth().padding(bottom = Tokens.s16)) {
+        Text(label, style = Type.label, color = vc.text2, modifier = Modifier.padding(start = Tokens.s4, bottom = Tokens.s8))
         BasicTextField(v, on, singleLine = true, textStyle = Type.body.copy(color = vc.text), cursorBrush = SolidColor(vc.accent),
             keyboardOptions = KeyboardOptions(keyboardType = kb),
-            modifier = Modifier.fillMaxWidth().heightIn(min = Tokens.touch).background(vc.surface2, RoundedCornerShape(Tokens.rSmall)).padding(horizontal = 16.dp, vertical = 14.dp))
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).background(vc.surface2, RoundedCornerShape(Tokens.rSmall)).padding(horizontal = Tokens.s16, vertical = Tokens.s12 + 2.dp))
     }
 }
 
 @Composable fun AddFab(desc: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val src = remember { MutableInteractionSource() }
     val pr by src.collectIsPressedAsState()
-    val s by animateFloatAsState(if (pr) 0.94f else 1f, spring(1f, Spring.StiffnessMediumLow), label = "fab")
-    Box(modifier.padding(Tokens.s24).size(56.dp).scale(s).shadow(8.dp, CircleShape, ambientColor = Color.Black.copy(0.1f), spotColor = Color.Black.copy(0.15f))
+    val s by animateFloatAsState(if (pr) 0.92f else 1f, snap(), label = "fab")
+    Box(modifier.padding(end = Tokens.screenH, bottom = Tokens.s24).size(56.dp).graphicsLayer { scaleX = s; scaleY = s }
         .background(vc.accent, CircleShape).clip(CircleShape).clickable(src, null, role = Role.Button, onClick = onClick), Alignment.Center) {
         Icon(Icons.Outlined.Add, desc, tint = Color.White, modifier = Modifier.size(26.dp))
     }
@@ -64,9 +64,9 @@ import kotlinx.coroutines.withContext
 @Composable fun ToastPill(msg: String?, modifier: Modifier = Modifier) {
     var last by remember { mutableStateOf("") }
     if (msg != null) last = msg
-    AnimatedVisibility(msg != null, modifier, enter = fadeIn(tween(220)) + slideInVertically(tween(260, easing = Smooth)) { it / 2 }, exit = fadeOut(tween(180))) {
-        Row(Modifier.padding(bottom = 96.dp).background(vc.text, RoundedCornerShape(24.dp)).padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Outlined.CheckCircle, null, tint = vc.accent, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
+    AnimatedVisibility(msg != null, modifier, enter = fadeIn(tween(200)) + slideInVertically(tween(280, easing = Smooth)) { it / 2 }, exit = fadeOut(tween(160)) + slideOutVertically(tween(160, easing = Smooth)) { it / 3 }) {
+        Row(Modifier.padding(bottom = Tokens.s24).background(vc.text, RoundedCornerShape(24.dp)).padding(horizontal = Tokens.s16, vertical = Tokens.s12), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.CheckCircle, null, tint = vc.accent, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(Tokens.s8))
             Text(last, style = Type.title, color = vc.bg)
         }
     }
@@ -113,8 +113,8 @@ private fun mask(id: String): String? = if (id.isBlank()) null else "•".repeat
         } else {
             Text("Review", style = Type.section, color = vc.text, modifier = Modifier.padding(bottom = Tokens.s16))
             VField("Title", title, { title = it })
-            Text("Category", style = Type.label, color = vc.text2, modifier = Modifier.padding(bottom = 6.dp))
-            Row(Modifier.horizontalScroll(rememberScrollState()).padding(bottom = Tokens.s12), horizontalArrangement = Arrangement.spacedBy(Tokens.s8)) {
+            Text("Category", style = Type.label, color = vc.text2, modifier = Modifier.padding(start = Tokens.s4, bottom = Tokens.s8))
+            Row(Modifier.horizontalScroll(rememberScrollState()).padding(bottom = Tokens.s16), horizontalArrangement = Arrangement.spacedBy(Tokens.s8)) {
                 Category.values().forEach { c -> FilterChip(cat == c, { cat = c }, { Text(c.label) }) }
             }
             VField("Identifier (optional)", ident, { ident = it })
@@ -147,7 +147,7 @@ private fun mask(id: String): String? = if (id.isBlank()) null else "•".repeat
     SheetBox(onClose) {
         Text("New contact", style = Type.section, color = vc.text, modifier = Modifier.padding(bottom = Tokens.s16))
         VField("Name", name, { name = it }); VField("Phone number", phone, { phone = it }, KeyboardType.Phone)
-        Row(Modifier.horizontalScroll(rememberScrollState()).padding(bottom = Tokens.s12), horizontalArrangement = Arrangement.spacedBy(Tokens.s8)) {
+        Row(Modifier.horizontalScroll(rememberScrollState()).padding(bottom = Tokens.s16), horizontalArrangement = Arrangement.spacedBy(Tokens.s8)) {
             listOf("Family", "Doctor", "Bank", "Insurance", "Other").forEach { g -> FilterChip(group == g, { group = g }, { Text(g) }) }
         }
         Row(Modifier.fillMaxWidth().heightIn(min = Tokens.touch), Arrangement.SpaceBetween, Alignment.CenterVertically) {
@@ -174,8 +174,8 @@ private fun mask(id: String): String? = if (id.isBlank()) null else "•".repeat
     val ctx = LocalContext.current
     var key by remember { mutableStateOf<String?>(null) }
     BackHandler { key = null; close() }
-    Column(Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(Tokens.s24)) {
-        IconButton({ key = null; close() }, Modifier.size(Tokens.touch)) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = vc.text) }
+    Column(Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = Tokens.screenH, vertical = Tokens.s16)) {
+        IconButton({ key = null; close() }, Modifier.offset(x = (-12).dp).size(Tokens.touch)) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = vc.text) }
         Spacer(Modifier.height(Tokens.s16))
         Text("Recovery key", style = Type.headline, color = vc.text)
         Text("If your phone's fingerprints change or you move to a new phone, this key is the only way back in. VAULT cannot recover it for you. Write it on paper and keep it somewhere safe. Do not screenshot it or store it on this phone. Creating a new key replaces the old one.",
@@ -197,7 +197,7 @@ private fun mask(id: String): String? = if (id.isBlank()) null else "•".repeat
 @Composable fun RecoveryEntry(a: FragmentActivity, cancel: () -> Unit, done: () -> Unit) {
     val ctx = LocalContext.current
     var text by remember { mutableStateOf("") }; var err by remember { mutableStateOf<String?>(null) }
-    Column(Modifier.fillMaxSize().systemBarsPadding().padding(Tokens.s24), Arrangement.Center) {
+    Column(Modifier.fillMaxSize().systemBarsPadding().padding(Tokens.screenH), Arrangement.Center) {
         Text("Enter recovery key", style = Type.headline, color = vc.text)
         Text("The 52-character key you wrote down.", style = Type.body, color = vc.text2, modifier = Modifier.padding(vertical = Tokens.s12))
         VField("Recovery key", text, { text = it.uppercase() })
